@@ -9,9 +9,9 @@ const PORT = process.env.PORT || 3000;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-app.use(cors());                // 모든 origin 허용 (개발용 CORS)
+app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // 같은 폴더의 index.html 등 정적 파일 서빙
+app.use(express.static(__dirname));
 
 // ---- 방문 로그 메모리 저장 ----
 const visits = [];
@@ -22,8 +22,15 @@ function getIp(req) {
   return req.socket?.remoteAddress || req.ip || 'unknown';
 }
 
-app.post('/api/visit', (req, res) => {
+// IP 조회 API (클라이언트가 자신의 IP 알아내기)
+app.get('/api/myip', (req, res) => {
   const ip = getIp(req);
+  res.json({ ip });
+});
+
+// 방문 기록 API (클라이언트가 보낸 IP 저장)
+app.post('/api/visit', (req, res) => {
+  const ip = req.body.ip || getIp(req); // 클라이언트가 보낸 IP 또는 서버에서 감지한 IP
   const ua = req.headers['user-agent'] || '';
   const now = new Date().toISOString();
 
@@ -31,6 +38,7 @@ app.post('/api/visit', (req, res) => {
   res.json({ ok: true });
 });
 
+// 방문자 조회 API
 app.get('/api/getvisituser', (req, res) => {
   res.json({ count: visits.length, visits });
 });
