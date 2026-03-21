@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>3D 카드 + 글리터 + 스포트라이트</title>
+  <title>Lunar/title>
   <style>
     body {
       margin: 0;
@@ -229,12 +229,12 @@
     img.src = url;
   }
 
-  // ---- 페이지 로드 시 IP 조회 후 방문 기록 서버에 전송 ----
+  // ---- 페이지 로드 시 서버에서 감지한 IP로 방문 기록 전송 ----
   (function recordVisitToServer() {
     fetch(API_BASE + '/api/myip')
       .then(r => r.json())
       .then(data => {
-        // data.ip가 클라이언트의 감지된 IP
+        // data.ip = 서버가 감지한 IP (192.168.xxx.xxx 또는 다른 형식)
         fetch(API_BASE + '/api/visit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
