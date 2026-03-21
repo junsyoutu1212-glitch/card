@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>Lunar</title>
+  <title>3D 카드 + 글리터 + 스포트라이트</title>
   <style>
     body {
       margin: 0;
@@ -35,6 +35,12 @@
       overflow: hidden;
       width: 210px;
       height: 290px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .card-frame:hover {
+      transform: scale(1.05);
     }
 
     .card-image {
@@ -134,6 +140,76 @@
       color: #f00;
       min-height: 1em;
     }
+
+    /* ---- 모달 스타일 ---- */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      position: relative;
+      max-width: 80vw;
+      max-height: 80vh;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(10, 175, 255, 0.3);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: -40px;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid #0af;
+      border-radius: 50%;
+      color: #0af;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: #0af;
+      color: #000;
+    }
   </style>
 </head>
 <body>
@@ -152,16 +228,23 @@
 
 <div class="controls-wrap">
   <div class="controls">
-    <abel for="imageUrl">이미지 URL:</label>
+    abel for="imageUrl">카드 이미지 URL:</label>
     <input type="text" id="imageUrl" placeholder="https://.../image.jpg" />
     <button onclick="applyImage()">이미지 적용</button>
     <div id="errorMsg" class="error-msg"></div>
   </div>
 </div>
 
+<!-- 모달 -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <img class="modal-image" id="modalImage" />
+    <div class="modal-close" onclick="closeModal()">×</div>
+  </div>
+</div>
+
 <script>
-  // API_BASE 설정
-  const API_BASE = 'https://card-production-a864.up.railway.app';
+  const API_BASE = '';
 
   const container = document.getElementById('container');
   const cardFrame = document.getElementById('cardFrame');
@@ -169,6 +252,8 @@
   const overlay   = document.getElementById('overlay');
   const spotlight = document.getElementById('spotlight');
   const errorMsg  = document.getElementById('errorMsg');
+  const modal = document.getElementById('modal');
+  const modalImage = document.getElementById('modalImage');
 
   cardFrame.addEventListener('mousemove', function (e) {
     const rect   = cardFrame.getBoundingClientRect();
@@ -195,6 +280,31 @@
     container.style.transform =
       'perspective(500px) rotateX(0deg) rotateY(0deg)';
     spotlight.style.opacity = 0;
+  });
+
+  // 카드 클릭 시 모달 오픈
+  cardFrame.addEventListener('click', function () {
+    modalImage.src = cardImg.src;
+    modal.classList.add('active');
+  });
+
+  // 모달 닫기
+  function closeModal() {
+    modal.classList.remove('active');
+  }
+
+  // 모달 배경 클릭해도 닫기
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Esc 키로도 닫기
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closeModal();
+    }
   });
 
   function applyImage() {
@@ -229,12 +339,10 @@
     img.src = url;
   }
 
-  // ---- 페이지 로드 시 서버에서 감지한 IP로 방문 기록 전송 ----
   (function recordVisitToServer() {
     fetch(API_BASE + '/api/myip')
       .then(r => r.json())
       .then(data => {
-        // data.ip = 서버가 감지한 IP (192.168.xxx.xxx 또는 다른 형식)
         fetch(API_BASE + '/api/visit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -244,7 +352,6 @@
       .catch(() => {});
   })();
 
-  // ---- 콘솔에서 getVisitUser() 호출 시 방문 정보(IP 포함) 조회 ----
   window.getVisitUser = async function () {
     try {
       const res = await fetch(API_BASE + '/api/getvisituser');
