@@ -280,7 +280,7 @@
       </div>
       <div class="modal-close" id="modalClose">×</div>
     </div>
-    <div class="modal-info">3D로 감상하다가 X / 배경 / ESC로 닫아보세요</div>
+    <div class="modal-info">3D로 감상 후 X / 배경 / ESC로 닫아보세요</div>
   </div>
 </div>
 
@@ -299,8 +299,13 @@
   const modalShine = document.getElementById('modalShine');
   const modalCloseBtn = document.getElementById('modalClose');
 
-  // 메인 카드: 마우스 이동 - 빛 + 3D 회전
+  let isOpeningAnimation = false;
+  let isClosingAnimation = false;
+
+  // 메인 카드: 마우스 이동 - 빛 + 3D 회전 (열기 애니 중에는 정지)
   cardContainer.addEventListener('mousemove', (e) => {
+    if (isOpeningAnimation) return;
+
     const rect = cardContainer.getBoundingClientRect();
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
@@ -317,7 +322,6 @@
     cardFrame.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
   });
 
-  // 메인 카드: 마우스가 밖으로 나가면 정면 복귀
   cardContainer.addEventListener('mouseleave', () => {
     cardShine.style.setProperty('--mouse-x', '50%');
     cardShine.style.setProperty('--mouse-y', '50%');
@@ -328,30 +332,27 @@
     }, 300);
   });
 
-  // 메인 카드 클릭 - 2바퀴 회전 후 모달 열기
+  // 메인 카드 클릭 - 1바퀴 회전 후 모달 열기
   cardFrame.addEventListener('click', () => {
-    // 열 때 회전
-    cardFrame.style.transition = 'transform 0.8s ease-out';
-    cardFrame.style.transform = 'rotateY(720deg)';
+    if (isOpeningAnimation) return;
+    isOpeningAnimation = true;
+
+    cardFrame.style.transition = 'transform 0.6s ease-out';
+    cardFrame.style.transform = 'rotateY(360deg)';
 
     setTimeout(() => {
-      // 회전 끝나면 모달 열기
+      // 모달 열기
       modalImage.src = cardImage.src;
       modal.classList.add('active');
       modal.classList.remove('closing');
       modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
 
-      // 메인 카드 원위치
-      cardFrame.style.transition = 'transform 0.3s ease-out';
+      // 메인 카드 정면 고정
+      cardFrame.style.transition = 'none';
       cardFrame.style.transform = 'rotateY(0deg) rotateX(0deg)';
-      setTimeout(() => {
-        cardFrame.style.transition = 'transform 0.1s ease';
-      }, 300);
-    }, 800);
+      isOpeningAnimation = false;
+    }, 600);
   });
-
-  // 모달 카드 상태 플래그
-  let isClosingAnimation = false;
 
   // 모달 카드: 마우스 이동 - 빛 + (닫는 중 아닐 때만) 3D 틸트
   modalCardFrame.addEventListener('mousemove', (e) => {
@@ -390,7 +391,7 @@
     }
   });
 
-  // 닫기 애니메이션 + 모달 숨기기 (X / 배경 / ESC 공통)
+  // 닫기 애니메이션 + 모달 숨기기 (1바퀴)
   function animateCloseAndHideModal() {
     if (!modal.classList.contains('active') || isClosingAnimation) return;
 
@@ -406,17 +407,15 @@
     const translateX = centerX - cardCenterX;
     const translateY = centerY - cardCenterY;
 
-    // 닫을 때: 카드 중앙으로 이동 + 정확히 2바퀴 회전
-    modalCardInner.style.transition = 'transform 0.8s ease-out';
+    // 1바퀴 회전 + 중앙 이동
+    modalCardInner.style.transition = 'transform 0.6s ease-out';
     modalCardInner.style.transform =
-      `translate(${translateX}px, ${translateY}px) rotateY(720deg)`;
+      `translate(${translateX}px, ${translateY}px) rotateY(360deg)`;
 
-    // 배경 페이드 아웃
     modal.classList.add('closing');
 
     setTimeout(() => {
-      // 카드 원위치 + 0deg
-      modalCardInner.style.transition = 'transform 0.4s ease-out';
+      modalCardInner.style.transition = 'transform 0.3s ease-out';
       modalCardInner.style.transform = 'translate(0, 0) rotateY(0deg)';
 
       setTimeout(() => {
@@ -424,14 +423,12 @@
         modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
         modal.classList.remove('active', 'closing');
         isClosingAnimation = false;
-      }, 400);
-    }, 800);
+      }, 300);
+    }, 600);
   }
 
   // X 버튼
-  modalCloseBtn.addEventListener('click', () => {
-    animateCloseAndHideModal();
-  });
+  modalCloseBtn.addEventListener('click', animateCloseAndHideModal);
 
   // 배경 클릭
   modal.addEventListener('click', (e) => {
@@ -480,7 +477,6 @@
       .catch(() => {});
   })();
 
-  // 콘솔 명령
   window.getVisitUser = async function () {
     try {
       const res = await fetch(API_BASE + '/api/getvisituser');
