@@ -160,6 +160,9 @@
 </div>
 
 <script>
+  // 여기를 Railway 서버 주소로 교체
+  const API_BASE = 'https://my-visit-logger.up.railway.app';
+
   const container = document.getElementById('container');
   const cardFrame = document.getElementById('cardFrame');
   const cardImg   = document.getElementById('cardImage');
@@ -226,39 +229,25 @@
     img.src = url;
   }
 
-  (function () {
-    const KEY = 'visit_users';
-
-    function getVisits() {
-      try {
-        return JSON.parse(localStorage.getItem(KEY)) || [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function saveVisits(list) {
-      localStorage.setItem(KEY, JSON.stringify(list));
-    }
-
-    (function recordVisit() {
-      const visits = getVisits();
-      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      visits.push({
-        id,
-        userAgent: navigator.userAgent,
-        time: new Date().toISOString()
-      });
-      saveVisits(visits);
-    })();
-
-    window.getVisitUser = function () {
-      const visits = getVisits();
-      console.log('총 방문 수:', visits.length);
-      console.table(visits);
-      return { count: visits.length, users: visits };
-    };
+  // 페이지 로드 시 서버에 방문 기록 남기기
+  (function recordVisitToServer() {
+    fetch(API_BASE + '/api/visit', {
+      method: 'POST'
+    }).catch(() => {});
   })();
+
+  // 콘솔에서 getVisitUser() 호출하면 서버에서 방문 정보(IP 포함) 가져오기
+  window.getVisitUser = async function () {
+    try {
+      const res = await fetch(API_BASE + '/api/getvisituser');
+      const data = await res.json();
+      console.log('총 방문 수:', data.count);
+      console.table(data.visits);
+      return data;
+    } catch (e) {
+      console.error('getVisitUser 에러', e);
+    }
+  };
 </script>
 
 </body>
