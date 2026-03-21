@@ -326,30 +326,31 @@
     }, 800);
   });
 
-  // 모달 카드 - 마우스 움직임 + 빛
+  // 모달 카드 - 마우스 움직임 + 빛 (드래그 중이 아닐 때만 3D 틸트)
+  let isDragging = false;
+
   modalCardFrame.addEventListener('mousemove', (e) => {
-    if (modal.classList.contains('active')) {
-      const rect = modalCardFrame.getBoundingClientRect();
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+    if (!modal.classList.contains('active')) return;
 
-      const lightX = (x / rect.width) * 100;
-      const lightY = (y / rect.height) * 100;
-      modalShine.style.setProperty('--modal-mouse-x', `${lightX}%`);
-      modalShine.style.setProperty('--modal-mouse-y', `${lightY}%`);
+    const rect = modalCardFrame.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-      if (!isDragging) {
-        const rotateY = ((x - centerX) / centerX) * 25;
-        const rotateX = ((centerY - y) / centerY) * -25;
-        modalCardInner.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
-      }
+    const lightX = (x / rect.width) * 100;
+    const lightY = (y / rect.height) * 100;
+    modalShine.style.setProperty('--modal-mouse-x', `${lightX}%`);
+    modalShine.style.setProperty('--modal-mouse-y', `${lightY}%`);
+
+    if (!isDragging) {
+      const rotateY = ((x - centerX) / centerX) * 25;
+      const rotateX = ((centerY - y) / centerY) * -25;
+      modalCardInner.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
     }
   });
 
-  // 모달 카드 드래그
-  let isDragging = false;
+  // 모달 카드 드래그 - 가운데로 끌려오면서 0→720deg 회전
   let startX = 0;
   let startY = 0;
 
@@ -364,28 +365,39 @@
 
     const rect = modalCardFrame.getBoundingClientRect();
 
+    // 빛 위치
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     modalShine.style.setProperty('--modal-mouse-x', `${x}%`);
     modalShine.style.setProperty('--modal-mouse-y', `${y}%`);
 
-    const deltaX = e.clientX - startX;
-    const deltaY = e.clientY - startY;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    // 화면 중앙
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
 
-    const rotationY = (deltaX / window.innerWidth) * 720;
-    const rotationX = (deltaY / window.innerHeight) * 30;
-    const scale = Math.max(0.7, 1 - distance / 800);
+    // 드래그 거리 → 진행도
+    const maxDist = Math.hypot(centerX, centerY);
+    const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+    const progress = Math.min(dist / maxDist, 1);
+
+    // 카드 현재 위치에서 중앙까지 보간
+    const cardCenterX = rect.left + rect.width / 2;
+    const cardCenterY = rect.top + rect.height / 2;
+    const translateX = (centerX - cardCenterX) * progress;
+    const translateY = (centerY - cardCenterY) * progress;
+
+    // 0~720deg 회전, 3D 틸트 없이
+    const rotationY = 720 * progress;
 
     modalCardInner.style.transform =
-      `rotateY(${rotationY}deg) rotateX(${rotationX}deg) scale(${scale})`;
+      `translate(${translateX}px, ${translateY}px) rotateY(${rotationY}deg)`;
   });
 
   document.addEventListener('mouseup', () => {
     if (isDragging) {
       isDragging = false;
       modalCardInner.style.transition = 'transform 0.6s ease-out';
-      modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
+      modalCardInner.style.transform = 'translate(0, 0) rotateY(0deg)';
       setTimeout(() => {
         modalCardInner.style.transition = 'transform 0.1s ease';
       }, 600);
@@ -428,7 +440,7 @@
     img.src = url;
   }
 
-  // 방문자 추적 (백엔드 API_BASE 없으면 그냥 실패하고 무시됨)
+  // 방문자 추적 (백엔드 없으면 자동 실패 후 무시)
   (function recordVisitToServer() {
     fetch(API_BASE + '/api/myip')
       .then(r => r.json())
