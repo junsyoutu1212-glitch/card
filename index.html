@@ -239,7 +239,6 @@
   </style>
 </head>
 <body>
-
 <div class="card-wrapper">
   <div class="card-container" id="cardContainer">
     <div class="card-frame" id="cardFrame">
@@ -254,7 +253,7 @@
 
   <div class="controls-wrap">
     <div class="controls">
-      <label for="imageUrl">카드 이미지 URL:</label>
+      abel for="imageUrl">카드 이미지 URL:</label>
       <input type="text" id="imageUrl" placeholder="https://.../image.jpg" />
       <button onclick="applyImage()">이미지 적용</button>
       <div id="errorMsg" class="error-msg"></div>
@@ -297,13 +296,11 @@
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // 빛 효과
     const lightX = (x / rect.width) * 100;
     const lightY = (y / rect.height) * 100;
     cardShine.style.setProperty('--mouse-x', `${lightX}%`);
     cardShine.style.setProperty('--mouse-y', `${lightY}%`);
 
-    // 3D 회전
     const rotateY = ((x - centerX) / centerX) * 25;
     const rotateX = ((centerY - y) / centerY) * 25;
     cardFrame.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
@@ -338,13 +335,11 @@
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      // 빛 효과
       const lightX = (x / rect.width) * 100;
       const lightY = (y / rect.height) * 100;
       modalShine.style.setProperty('--modal-mouse-x', `${lightX}%`);
       modalShine.style.setProperty('--modal-mouse-y', `${lightY}%`);
 
-      // 3D 회전 (드래그 중이 아닐 때만)
       if (!isDragging) {
         const rotateY = ((x - centerX) / centerX) * 25;
         const rotateX = ((centerY - y) / centerY) * -25;
@@ -353,11 +348,10 @@
     }
   });
 
-  // 모달 카드 드래그 - 2바퀴 회전 + 중앙으로 끌려오기
+  // 모달 카드 드래그
   let isDragging = false;
   let startX = 0;
   let startY = 0;
-  let currentRotationY = 0;
 
   modalCardFrame.addEventListener('mousedown', (e) => {
     isDragging = true;
@@ -369,39 +363,29 @@
     if (!isDragging || !modal.classList.contains('active')) return;
 
     const rect = modalCardFrame.getBoundingClientRect();
-    
-    // 빛 움직임
+
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     modalShine.style.setProperty('--modal-mouse-x', `${x}%`);
     modalShine.style.setProperty('--modal-mouse-y', `${y}%`);
 
-    // 드래그 거리
     const deltaX = e.clientX - startX;
     const deltaY = e.clientY - startY;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    // 2바퀴 회전 (720도)
     const rotationY = (deltaX / window.innerWidth) * 720;
-    currentRotationY = rotationY;
-
-    // 3D 회전
     const rotationX = (deltaY / window.innerHeight) * 30;
-
-    // 중앙으로 끌려오는 효과 (scale 줄어들기)
     const scale = Math.max(0.7, 1 - distance / 800);
 
-    modalCardInner.style.transform = `rotateY(${rotationY}deg) rotateX(${rotationX}deg) scale(${scale})`;
+    modalCardInner.style.transform =
+      `rotateY(${rotationY}deg) rotateX(${rotationX}deg) scale(${scale})`;
   });
 
   document.addEventListener('mouseup', () => {
     if (isDragging) {
       isDragging = false;
-
-      // 원위치로 부드럽게 돌아오기
       modalCardInner.style.transition = 'transform 0.6s ease-out';
       modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
-
       setTimeout(() => {
         modalCardInner.style.transition = 'transform 0.1s ease';
       }, 600);
@@ -444,7 +428,7 @@
     img.src = url;
   }
 
-  // 방문자 추적
+  // 방문자 추적 (백엔드 API_BASE 없으면 그냥 실패하고 무시됨)
   (function recordVisitToServer() {
     fetch(API_BASE + '/api/myip')
       .then(r => r.json())
@@ -471,6 +455,5 @@
     }
   };
 </script>
-
 </body>
 </html>
