@@ -326,9 +326,11 @@
     }, 800);
   });
 
-  // 모달 카드 - 마우스 움직임 + 빛 (드래그 중이 아닐 때만 3D 틸트)
+  // 모달 카드 상태 플래그
   let isDragging = false;
+  let isAnimatingToCenter = false;
 
+  // 모달 카드 - 마우스 빛, (드래그/중앙연출 아닐 때만 3D 틸트)
   modalCardFrame.addEventListener('mousemove', (e) => {
     if (!modal.classList.contains('active')) return;
 
@@ -343,65 +345,50 @@
     modalShine.style.setProperty('--modal-mouse-x', `${lightX}%`);
     modalShine.style.setProperty('--modal-mouse-y', `${lightY}%`);
 
-    if (!isDragging) {
+    if (!isDragging && !isAnimatingToCenter) {
       const rotateY = ((x - centerX) / centerX) * 25;
       const rotateX = ((centerY - y) / centerY) * -25;
       modalCardInner.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
     }
   });
 
-  // 모달 카드 드래그 - 가운데로 끌려오면서 0→720deg 회전
-  let startX = 0;
-  let startY = 0;
-
+  // 드래그 시작: 중앙으로 이동하면서 720도 회전, 이때 3D 틸트 OFF
   modalCardFrame.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-  });
+    if (!modal.classList.contains('active')) return;
 
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging || !modal.classList.contains('active')) return;
+    isDragging = true;
+    isAnimatingToCenter = true;
 
     const rect = modalCardFrame.getBoundingClientRect();
+    const cardCenterX = rect.left + rect.width / 2;
+    const cardCenterY = rect.top + rect.height / 2;
 
-    // 빛 위치
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    modalShine.style.setProperty('--modal-mouse-x', `${x}%`);
-    modalShine.style.setProperty('--modal-mouse-y', `${y}%`);
-
-    // 화면 중앙
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
 
-    // 드래그 거리 → 진행도
-    const maxDist = Math.hypot(centerX, centerY);
-    const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
-    const progress = Math.min(dist / maxDist, 1);
+    const translateX = centerX - cardCenterX;
+    const translateY = centerY - cardCenterY;
 
-    // 카드 현재 위치에서 중앙까지 보간
-    const cardCenterX = rect.left + rect.width / 2;
-    const cardCenterY = rect.top + rect.height / 2;
-    const translateX = (centerX - cardCenterX) * progress;
-    const translateY = (centerY - cardCenterY) * progress;
-
-    // 0~720deg 회전, 3D 틸트 없이
-    const rotationY = 720 * progress;
-
+    // 중앙으로 이동 + 720deg 회전 (3D 틸트 없이 Y축 회전만)
+    modalCardInner.style.transition = 'transform 0.8s ease-out';
     modalCardInner.style.transform =
-      `translate(${translateX}px, ${translateY}px) rotateY(${rotationY}deg)`;
-  });
+      `translate(${translateX}px, ${translateY}px) rotateY(720deg)`;
 
-  document.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
+    // 애니메이션 끝난 뒤 원위치 + 플래그 해제
+    setTimeout(() => {
       modalCardInner.style.transition = 'transform 0.6s ease-out';
       modalCardInner.style.transform = 'translate(0, 0) rotateY(0deg)';
       setTimeout(() => {
         modalCardInner.style.transition = 'transform 0.1s ease';
+        isDragging = false;
+        isAnimatingToCenter = false;
       }, 600);
-    }
+    }, 800);
+  });
+
+  // mouseup에서는 별도 transform 처리 없음 (타이머가 담당)
+  document.addEventListener('mouseup', () => {
+    // 필요 시 여기에 추가 로직 가능
   });
 
   // 모달 닫기
