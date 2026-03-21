@@ -130,11 +130,14 @@
       display: none;
       position: fixed;
       inset: 0;
-      background-color: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background-color: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(0px);
+      -webkit-backdrop-filter: blur(0px);
       opacity: 0;
-      transition: opacity 0.4s ease;
+      transition:
+        opacity 0.4s ease,
+        backdrop-filter 0.4s ease,
+        -webkit-backdrop-filter 0.4s ease;
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -144,10 +147,14 @@
     .modal.active {
       display: flex;
       opacity: 1;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .modal.closing {
       opacity: 0;
+      backdrop-filter: blur(0px);
+      -webkit-backdrop-filter: blur(0px);
     }
 
     .modal-content {
@@ -179,7 +186,7 @@
       border-radius: 20px;
       overflow: hidden;
       transform-style: preserve-3d;
-      transition: transform 0.1s ease;
+      transition: transform 0.1s ease, opacity 0.1s ease;
       box-shadow: 0 10px 40px rgba(10, 175, 255, 0.5);
     }
 
@@ -207,7 +214,7 @@
       position: absolute;
       bottom: -50px;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translateX(-50%) scale(1);
       width: 60px;
       height: 60px;
       background: rgba(10, 175, 255, 0.2);
@@ -226,18 +233,18 @@
     @keyframes closeAppear {
       from {
         opacity: 0;
-        transform: translateX(-50%) translateY(20px);
+        transform: translateX(-50%) translateY(20px) scale(1);
       }
       to {
         opacity: 1;
-        transform: translateX(-50%) translateY(0);
+        transform: translateX(-50%) translateY(0) scale(1);
       }
     }
 
-    .modal-close:hover {
-      background: #0af;
-      color: #000;
-      box-shadow: 0 0 20px rgba(10, 175, 255, 0.5);
+    /* 닫는 중 X 버튼 강조 */
+    .modal-close.active-big {
+      transform: translateX(-50%) scale(1.2);
+      box-shadow: 0 0 20px rgba(10, 175, 255, 0.7);
     }
 
     .modal-info {
@@ -332,24 +339,25 @@
     }, 300);
   });
 
-  // 메인 카드 클릭 - 1바퀴 회전 후 모달 열기
+  // 메인 카드 클릭 - 1바퀴 회전 + 확대 후 모달 열기
   cardFrame.addEventListener('click', () => {
     if (isOpeningAnimation) return;
     isOpeningAnimation = true;
 
     cardFrame.style.transition = 'transform 0.6s ease-out';
-    cardFrame.style.transform = 'rotateY(360deg)';
+    cardFrame.style.transform = 'rotateY(360deg) scale(1.1)';
 
     setTimeout(() => {
-      // 모달 열기
+      // 모달 열기 + 블러 페이드 인은 CSS에서 처리
       modalImage.src = cardImage.src;
       modal.classList.add('active');
       modal.classList.remove('closing');
-      modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
+      modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
+      modalCardInner.style.opacity = '1';
 
-      // 메인 카드 정면 고정
+      // 메인 카드 정면 + 원래 크기로 고정
       cardFrame.style.transition = 'none';
-      cardFrame.style.transform = 'rotateY(0deg) rotateX(0deg)';
+      cardFrame.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
       isOpeningAnimation = false;
     }, 600);
   });
@@ -386,12 +394,12 @@
       modalCardInner.style.transition = 'transform 0.3s ease';
       modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
       setTimeout(() => {
-        modalCardInner.style.transition = 'transform 0.1s ease';
+        modalCardInner.style.transition = 'transform 0.1s ease, opacity 0.1s ease';
       }, 300);
     }
   });
 
-  // 닫기 애니메이션 + 모달 숨기기 (1바퀴)
+  // 닫기 애니메이션 + 모달 숨기기 (카드 1바퀴 + 확대, 블러 페이드)
   function animateCloseAndHideModal() {
     if (!modal.classList.contains('active') || isClosingAnimation) return;
 
@@ -407,21 +415,31 @@
     const translateX = centerX - cardCenterX;
     const translateY = centerY - cardCenterY;
 
-    // 1바퀴 회전 + 중앙 이동
-    modalCardInner.style.transition = 'transform 0.6s ease-out';
-    modalCardInner.style.transform =
-      `translate(${translateX}px, ${translateY}px) rotateY(360deg)`;
+    // X 버튼 강조
+    modalCloseBtn.classList.add('active-big');
 
+    // 카드: 중앙으로 이동 + 1바퀴 + 확대 + 살짝 투명
+    modalCardInner.style.transition = 'transform 0.6s ease-out, opacity 0.6s ease-out';
+    modalCardInner.style.transform =
+      `translate(${translateX}px, ${translateY}px) rotateY(360deg) scale(1.1)`;
+    modalCardInner.style.opacity = '0.9';
+
+    // 배경 블러 + opacity 페이드 아웃
     modal.classList.add('closing');
 
     setTimeout(() => {
-      modalCardInner.style.transition = 'transform 0.3s ease-out';
-      modalCardInner.style.transform = 'translate(0, 0) rotateY(0deg)';
+      // 카드: 정면 + 원래 크기 + 완전 투명
+      modalCardInner.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+      modalCardInner.style.transform = 'translate(0, 0) rotateY(0deg) scale(1)';
+      modalCardInner.style.opacity = '0';
 
       setTimeout(() => {
-        modalCardInner.style.transition = 'transform 0.1s ease';
-        modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
+        // 모달 완전 닫기, 상태 초기화
+        modalCardInner.style.transition = 'transform 0.1s ease, opacity 0.1s ease';
+        modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
+        modalCardInner.style.opacity = '1';
         modal.classList.remove('active', 'closing');
+        modalCloseBtn.classList.remove('active-big');
         isClosingAnimation = false;
       }, 300);
     }, 600);
