@@ -23,6 +23,13 @@
       padding: 20px;
     }
 
+    .card-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
     .card-container {
       position: relative;
       perspective: 1000px;
@@ -54,15 +61,6 @@
       100% { transform: rotateY(0deg); }
     }
 
-    .card-frame.drag {
-      animation: dragRotate 0.3s ease;
-    }
-
-    @keyframes dragRotate {
-      0% { transform: rotateY(0deg); }
-      100% { transform: rotateY(-5deg); }
-    }
-
     .card-image {
       width: 100%;
       height: 100%;
@@ -81,13 +79,6 @@
       );
       pointer-events: none;
       border-radius: 20px;
-    }
-
-    .card-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
     }
 
     .controls-wrap {
@@ -144,7 +135,6 @@
       min-height: 1em;
     }
 
-    /* 모달 스타일 */
     .modal {
       display: none;
       position: fixed;
@@ -171,7 +161,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
+      gap: 50px;
       animation: slideUp 0.3s ease;
     }
 
@@ -191,16 +181,24 @@
       width: 280px;
       height: 380px;
       border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 10px 40px rgba(10, 175, 255, 0.5);
       cursor: grab;
       perspective: 1000px;
       transform-style: preserve-3d;
-      transition: transform 0.2s ease;
     }
 
     .modal-card-frame:active {
       cursor: grabbing;
+    }
+
+    .modal-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      transition: transform 0.1s ease;
+      box-shadow: 0 10px 40px rgba(10, 175, 255, 0.5);
     }
 
     .modal-image {
@@ -223,35 +221,48 @@
       border-radius: 20px;
     }
 
-    .modal-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
     .modal-close {
-      width: 50px;
-      height: 50px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid #0af;
-      border-radius: 12px;
+      position: absolute;
+      bottom: -50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      background: rgba(10, 175, 255, 0.2);
+      border: 3px solid #0af;
+      border-radius: 50%;
       color: #0af;
-      font-size: 28px;
+      font-size: 36px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
+      animation: closeAppear 0.4s ease 0.3s both;
+    }
+
+    @keyframes closeAppear {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     }
 
     .modal-close:hover {
       background: #0af;
       color: #000;
+      box-shadow: 0 0 20px rgba(10, 175, 255, 0.5);
     }
 
     .modal-info {
       font-size: 12px;
       color: #aaa;
+      text-align: center;
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -271,7 +282,7 @@
 
   <div class="controls-wrap">
     <div class="controls">
-      <label for="imageUrl">카드 이미지 URL:</label>
+      abel for="imageUrl">카드 이미지 URL:</label>
       <input type="text" id="imageUrl" placeholder="https://.../image.jpg" />
       <button onclick="applyImage()">이미지 적용</button>
       <div id="errorMsg" class="error-msg"></div>
@@ -279,22 +290,21 @@
   </div>
 </div>
 
-<!-- 모달 -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <div class="modal-card-frame" id="modalCardFrame">
-      <img class="modal-image" id="modalImage" />
-      <div class="modal-shine" id="modalShine"></div>
+      <div class="modal-card-inner" id="modalCardInner">
+        <img class="modal-image" id="modalImage" />
+        <div class="modal-shine" id="modalShine"></div>
+      </div>
+      <div class="modal-close" id="modalClose" onclick="closeModal()">×</div>
     </div>
-    <div class="modal-controls">
-      <div class="modal-info">끌어서 회전 | Esc로 닫기</div>
-      <div class="modal-close" onclick="closeModal()">×</div>
-    </div>
+    <div class="modal-info">끌어서 회전 | Esc로 닫기</div>
   </div>
 </div>
 
 <script>
-  const API_BASE = '';
+      const API_BASE = '';
 
   const cardContainer = document.getElementById('cardContainer');
   const cardFrame = document.getElementById('cardFrame');
@@ -304,6 +314,7 @@
   const modal = document.getElementById('modal');
   const modalImage = document.getElementById('modalImage');
   const modalCardFrame = document.getElementById('modalCardFrame');
+  const modalCardInner = document.getElementById('modalCardInner');
   const modalShine = document.getElementById('modalShine');
 
   // 카드 마우스 이동 - 빛 효과
@@ -311,7 +322,6 @@
     const rect = cardContainer.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
     cardShine.style.setProperty('--mouse-x', `${x}%`);
     cardShine.style.setProperty('--mouse-y', `${y}%`);
   });
@@ -321,49 +331,81 @@
     cardShine.style.setProperty('--mouse-y', '50%');
   });
 
-  // 카드 클릭 시 모달 열기 + 수직 회전 애니메이션
+  // 카드 클릭 시 모달 열기
   cardFrame.addEventListener('click', () => {
     cardFrame.classList.add('flip');
     setTimeout(() => {
       cardFrame.classList.remove('flip');
       modalImage.src = cardImage.src;
       modal.classList.add('active');
+      modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
     }, 300);
   });
 
-  // 모달 내부 카드 끌기 - 수직 회전 + 빛 이동
+  // 모달 카드 드래그 + 3D 회전
   let isDragging = false;
   let startX = 0;
+  let startY = 0;
+  let currentRotationY = 0;
 
   modalCardFrame.addEventListener('mousedown', (e) => {
     isDragging = true;
     startX = e.clientX;
-    modalCardFrame.classList.add('drag');
+    startY = e.clientY;
   });
 
   document.addEventListener('mousemove', (e) => {
-    if (!isDragging || !modal.classList.contains('active')) return;
+    if (!modal.classList.contains('active')) return;
 
     const rect = modalCardFrame.getBoundingClientRect();
     
     // 빛 움직임
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
     modalShine.style.setProperty('--modal-mouse-x', `${x}%`);
     modalShine.style.setProperty('--modal-mouse-y', `${y}%`);
 
-    // 끌 때 수직 회전
+    if (!isDragging) {
+      // 일반 마우스 움직임 - 3D 회전
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const xPos = e.clientX - rect.left - centerX;
+      const yPos = e.clientY - rect.top - centerY;
+      const rotateY = (xPos / centerX) * 20;
+      const rotateX = (yPos / centerY) * -20;
+      modalCardInner.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+      return;
+    }
+
+    // 드래그 - 2바퀴 회전 + 3D
     const deltaX = e.clientX - startX;
-    const rotation = (deltaX / window.innerWidth) * 30; // 최대 30도 회전
-    modalCardFrame.style.transform = `rotateY(${rotation}deg)`;
+    const deltaY = e.clientY - startY;
+    const rotationY = (deltaX / window.innerWidth) * 720;
+    const rotationX = (deltaY / window.innerHeight) * 30;
+    currentRotationY = rotationY;
+    modalCardInner.style.transform = `rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
   });
 
   document.addEventListener('mouseup', () => {
     if (isDragging) {
       isDragging = false;
-      modalCardFrame.classList.remove('drag');
-      modalCardFrame.style.transform = 'rotateY(0deg)';
+      const normalizedRotation = Math.round(currentRotationY / 360) * 360;
+      modalCardInner.style.transition = 'transform 0.6s ease-out';
+      modalCardInner.style.transform = `rotateY(${normalizedRotation}deg) rotateX(0deg)`;
+      setTimeout(() => {
+        modalCardInner.style.transition = 'transform 0.1s ease';
+      }, 600);
+    }
+  });
+
+  // 모달에서 마우스 떠나면 복원
+  modalCardFrame.addEventListener('mouseleave', () => {
+    if (!isDragging) {
+      modalCardInner.style.transition = 'transform 0.3s ease';
+      modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
+      setTimeout(() => {
+        modalCardInner.style.transition = 'transform 0.1s ease';
+      }, 300);
     }
   });
 
@@ -384,6 +426,7 @@
     }
   });
 
+  // 이미지 변경
   function applyImage() {
     const url = document.getElementById('imageUrl').value.trim();
     errorMsg.textContent = '';
@@ -402,6 +445,7 @@
     img.src = url;
   }
 
+  // 방문자 추적
   (function recordVisitToServer() {
     fetch(API_BASE + '/api/myip')
       .then(r => r.json())
@@ -415,6 +459,7 @@
       .catch(() => {});
   })();
 
+  // 콘솔에서 getVisitUser() 호출
   window.getVisitUser = async function () {
     try {
       const res = await fetch(API_BASE + '/api/getvisituser');
