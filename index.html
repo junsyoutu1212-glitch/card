@@ -152,7 +152,7 @@
 
 <div class="controls-wrap">
   <div class="controls">
-    <label for="imageUrl">카드 이미지 URL:</label>
+    abel for="imageUrl">카드 이미지 URL:</label>
     <input type="text" id="imageUrl" placeholder="https://.../image.jpg" />
     <button onclick="applyImage()">이미지 적용</button>
     <div id="errorMsg" class="error-msg"></div>
@@ -160,8 +160,8 @@
 </div>
 
 <script>
-  // 여기를 Railway 서버 주소로 교체
-  const API_BASE = 'https://my-visit-logger.up.railway.app';
+  // API_BASE 설정 (같은 도메인 사용)
+  const API_BASE = '';
 
   const container = document.getElementById('container');
   const cardFrame = document.getElementById('cardFrame');
@@ -229,14 +229,14 @@
     img.src = url;
   }
 
-  // 페이지 로드 시 서버에 방문 기록 남기기
+  // ---- 페이지 로드 시 방문 기록 서버에 전송 ----
   (function recordVisitToServer() {
     fetch(API_BASE + '/api/visit', {
       method: 'POST'
     }).catch(() => {});
   })();
 
-  // 콘솔에서 getVisitUser() 호출하면 서버에서 방문 정보(IP 포함) 가져오기
+  // ---- 콘솔에서 getVisitUser() 호출 시 방문 정보(IP 포함) 조회 ----
   window.getVisitUser = async function () {
     try {
       const res = await fetch(API_BASE + '/api/getvisituser');
