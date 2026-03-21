@@ -9,13 +9,11 @@ const PORT = process.env.PORT || 3000;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-app.use(cors());
+app.use(cors());                // 모든 origin 허용 (개발용 CORS)
 app.use(express.json());
+app.use(express.static(__dirname)); // 같은 폴더의 index.html 등 정적 파일 서빙
 
-// 정적 파일 서빙 (index.html 포함 같은 폴더)
-app.use(express.static(__dirname));
-
-// ---- 아래는 방문 로그 API ----
+// ---- 방문 로그 메모리 저장 ----
 const visits = [];
 
 function getIp(req) {
