@@ -43,22 +43,12 @@
       overflow: hidden;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
       cursor: pointer;
-      transition: transform 0.3s ease;
       transform-style: preserve-3d;
+      transition: transform 0.1s ease;
     }
 
     .card-frame:hover {
       transform: scale(1.02);
-    }
-
-    .card-frame.flip {
-      animation: flipCard 0.6s ease-in-out;
-    }
-
-    @keyframes flipCard {
-      0% { transform: rotateY(0deg); }
-      50% { transform: rotateY(90deg); }
-      100% { transform: rotateY(0deg); }
     }
 
     .card-image {
@@ -143,17 +133,11 @@
       z-index: 1000;
       align-items: center;
       justify-content: center;
-      animation: fadeIn 0.3s ease;
       padding: 20px;
     }
 
     .modal.active {
       display: flex;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
     }
 
     .modal-content {
@@ -162,18 +146,6 @@
       flex-direction: column;
       align-items: center;
       gap: 50px;
-      animation: slideUp 0.3s ease;
-    }
-
-    @keyframes slideUp {
-      from {
-        transform: translateY(50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
     }
 
     .modal-card-frame {
@@ -282,7 +254,7 @@
 
   <div class="controls-wrap">
     <div class="controls">
-      abel for="imageUrl">카드 이미지 URL:</label>
+      <label for="imageUrl">카드 이미지 URL:</label>
       <input type="text" id="imageUrl" placeholder="https://.../image.jpg" />
       <button onclick="applyImage()">이미지 적용</button>
       <div id="errorMsg" class="error-msg"></div>
@@ -304,7 +276,7 @@
 </div>
 
 <script>
-      const API_BASE = '';
+  const API_BASE = '';
 
   const cardContainer = document.getElementById('cardContainer');
   const cardFrame = document.getElementById('cardFrame');
@@ -317,32 +289,71 @@
   const modalCardInner = document.getElementById('modalCardInner');
   const modalShine = document.getElementById('modalShine');
 
-  // 카드 마우스 이동 - 빛 효과
+  // 카드 마우스 이동 - 빛 + 3D 회전
   cardContainer.addEventListener('mousemove', (e) => {
     const rect = cardContainer.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    cardShine.style.setProperty('--mouse-x', `${x}%`);
-    cardShine.style.setProperty('--mouse-y', `${y}%`);
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // 빛 효과
+    const lightX = (x / rect.width) * 100;
+    const lightY = (y / rect.height) * 100;
+    cardShine.style.setProperty('--mouse-x', `${lightX}%`);
+    cardShine.style.setProperty('--mouse-y', `${lightY}%`);
+
+    // 3D 회전
+    const rotateY = ((x - centerX) / centerX) * 25;
+    const rotateX = ((centerY - y) / centerY) * 25;
+    cardFrame.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
   });
 
   cardContainer.addEventListener('mouseleave', () => {
     cardShine.style.setProperty('--mouse-x', '50%');
     cardShine.style.setProperty('--mouse-y', '50%');
+    cardFrame.style.transition = 'transform 0.3s ease';
+    cardFrame.style.transform = 'rotateY(0deg) rotateX(0deg)';
   });
 
-  // 카드 클릭 시 모달 열기
+  // 카드 클릭 - 2바퀴 회전 후 모달 표시
   cardFrame.addEventListener('click', () => {
-    cardFrame.classList.add('flip');
+    cardFrame.style.transition = 'transform 0.8s ease-out';
+    cardFrame.style.transform = 'rotateY(720deg)';
+
     setTimeout(() => {
-      cardFrame.classList.remove('flip');
       modalImage.src = cardImage.src;
       modal.classList.add('active');
       modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
-    }, 300);
+      cardFrame.style.transition = 'transform 0.1s ease';
+    }, 800);
   });
 
-  // 모달 카드 드래그 + 3D 회전
+  // 모달 카드 - 마우스 움직임 + 빛
+  modalCardFrame.addEventListener('mousemove', (e) => {
+    if (modal.classList.contains('active')) {
+      const rect = modalCardFrame.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // 빛 효과
+      const lightX = (x / rect.width) * 100;
+      const lightY = (y / rect.height) * 100;
+      modalShine.style.setProperty('--modal-mouse-x', `${lightX}%`);
+      modalShine.style.setProperty('--modal-mouse-y', `${lightY}%`);
+
+      // 3D 회전 (드래그 중이 아닐 때만)
+      if (!isDragging) {
+        const rotateY = ((x - centerX) / centerX) * 25;
+        const rotateX = ((centerY - y) / centerY) * -25;
+        modalCardInner.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+      }
+    }
+  });
+
+  // 모달 카드 드래그 - 2바퀴 회전 + 중앙으로 끌려오기
   let isDragging = false;
   let startX = 0;
   let startY = 0;
@@ -355,7 +366,7 @@
   });
 
   document.addEventListener('mousemove', (e) => {
-    if (!modal.classList.contains('active')) return;
+    if (!isDragging || !modal.classList.contains('active')) return;
 
     const rect = modalCardFrame.getBoundingClientRect();
     
@@ -365,47 +376,35 @@
     modalShine.style.setProperty('--modal-mouse-x', `${x}%`);
     modalShine.style.setProperty('--modal-mouse-y', `${y}%`);
 
-    if (!isDragging) {
-      // 일반 마우스 움직임 - 3D 회전
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      const xPos = e.clientX - rect.left - centerX;
-      const yPos = e.clientY - rect.top - centerY;
-      const rotateY = (xPos / centerX) * 20;
-      const rotateX = (yPos / centerY) * -20;
-      modalCardInner.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
-      return;
-    }
-
-    // 드래그 - 2바퀴 회전 + 3D
+    // 드래그 거리
     const deltaX = e.clientX - startX;
     const deltaY = e.clientY - startY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // 2바퀴 회전 (720도)
     const rotationY = (deltaX / window.innerWidth) * 720;
-    const rotationX = (deltaY / window.innerHeight) * 30;
     currentRotationY = rotationY;
-    modalCardInner.style.transform = `rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
+
+    // 3D 회전
+    const rotationX = (deltaY / window.innerHeight) * 30;
+
+    // 중앙으로 끌려오는 효과 (scale 줄어들기)
+    const scale = Math.max(0.7, 1 - distance / 800);
+
+    modalCardInner.style.transform = `rotateY(${rotationY}deg) rotateX(${rotationX}deg) scale(${scale})`;
   });
 
   document.addEventListener('mouseup', () => {
     if (isDragging) {
       isDragging = false;
-      const normalizedRotation = Math.round(currentRotationY / 360) * 360;
+
+      // 원위치로 부드럽게 돌아오기
       modalCardInner.style.transition = 'transform 0.6s ease-out';
-      modalCardInner.style.transform = `rotateY(${normalizedRotation}deg) rotateX(0deg)`;
+      modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
+
       setTimeout(() => {
         modalCardInner.style.transition = 'transform 0.1s ease';
       }, 600);
-    }
-  });
-
-  // 모달에서 마우스 떠나면 복원
-  modalCardFrame.addEventListener('mouseleave', () => {
-    if (!isDragging) {
-      modalCardInner.style.transition = 'transform 0.3s ease';
-      modalCardInner.style.transform = 'rotateY(0deg) rotateX(0deg)';
-      setTimeout(() => {
-        modalCardInner.style.transition = 'transform 0.1s ease';
-      }, 300);
     }
   });
 
@@ -459,7 +458,7 @@
       .catch(() => {});
   })();
 
-  // 콘솔에서 getVisitUser() 호출
+  // 콘솔 명령
   window.getVisitUser = async function () {
     try {
       const res = await fetch(API_BASE + '/api/getvisituser');
