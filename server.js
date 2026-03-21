@@ -22,13 +22,13 @@ function getIp(req) {
   return req.socket?.remoteAddress || req.ip || 'unknown';
 }
 
-// IP 조회 API (서버가 감지한 IP 반환)
+// IP 조회 API
 app.get('/api/myip', (req, res) => {
   const ip = getIp(req);
   res.json({ ip });
 });
 
-// 방문 기록 API (클라이언트가 보낸 IP 저장)
+// 방문 기록 API
 app.post('/api/visit', (req, res) => {
   const ip = req.body.ip || getIp(req);
   const ua = req.headers['user-agent'] || '';
