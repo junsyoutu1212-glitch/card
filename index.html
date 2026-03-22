@@ -1,444 +1,337 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-    <meta charset="UTF-8" />
-    <title>Dynamic Holographic Card</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <title>Dynamic Holographic Card</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      min-height:100vh;
+      padding:20px;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(-45deg,#0f172a,#0b1120,#1e293b,#020617);
+      background-size:400% 400%;
+      animation:bgMove 18s ease infinite;
+      position:relative;
+      overflow:hidden;
+    }
+    @keyframes bgMove {
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:-50px;
+      pointer-events:none;
+      background-image:
+        linear-gradient(#0af1 1px,transparent 1px),
+        linear-gradient(90deg,#0af1 1px,transparent 1px);
+      background-size:40px 40px;
+      opacity:.25;
+      mix-blend-mode:screen;
+      animation:gridMove 15s linear infinite;
+    }
+    @keyframes gridMove{
+      0%{transform:translate3d(0,0,0)}
+      100%{transform:translate3d(-40px,-40px,0)}
+    }
 
-        /* ===== 다이나믹 배경 ===== */
-        body {
-            min-height: 100vh;
-            padding: 20px;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(-45deg, #0f172a, #0b1120, #1e293b, #020617);
-            background-size: 400% 400%;
-            animation: bgMove 18s ease infinite;
-            position: relative;
-            overflow: hidden;
-        }
+    .card-wrapper{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:20px;
+      position:relative;
+      z-index:20;
+    }
+    .card-container{
+      position:relative;
+      perspective:1100px;
+      z-index:20;
+    }
+    .card-frame{
+      position:relative;
+      z-index:20;
+      width:280px;
+      height:380px;
+      border-radius:22px;
+      overflow:hidden;
+      cursor:pointer;
+      transform-style:preserve-3d;
+      transition:transform .12s ease-out,box-shadow .2s ease-out,filter .2s ease-out;
+      box-shadow:0 20px 40px rgba(0,0,0,.8),0 0 40px rgba(0,255,255,.18);
+      background:#05080f;
+      border:1px solid rgba(255,255,255,.12);
+      isolation:isolate;
+    }
+    .card-image{
+      width:100%;height:100%;
+      object-fit:cover;display:block;
+    }
+    .card-shine{
+      position:absolute;inset:0;
+      border-radius:inherit;
+      background:radial-gradient(circle at var(--mx,50%) var(--my,50%),
+        rgba(255,255,255,.7) 0,
+        rgba(255,255,255,.3) 20%,
+        transparent 55%);
+      pointer-events:none;
+      mix-blend-mode:screen;
+    }
+    .card-frame::before{
+      content:"";position:absolute;inset:-40%;
+      background-image:conic-gradient(
+        from 0deg,
+        rgba(255,0,128,.2),
+        rgba(0,255,255,.35),
+        rgba(255,255,0,.35),
+        rgba(0,128,255,.4),
+        rgba(255,0,128,.5),
+        rgba(0,255,255,.4),
+        rgba(255,255,0,.2)
+      );
+      mix-blend-mode:color-dodge;
+      opacity:.55;filter:blur(1px);
+      transform:translate3d(0,0,1px);
+      animation:holoSweep 10s linear infinite;
+      pointer-events:none;
+    }
+    .card-frame::after{
+      content:"";position:absolute;inset:0;
+      background-image:
+        radial-gradient(circle,rgba(255,255,255,.4) 0,transparent 55%),
+        repeating-linear-gradient(45deg,rgba(255,255,255,.22) 0 1px,transparent 1px 3px);
+      background-size:180% 180%,260% 260%;
+      mix-blend-mode:screen;
+      opacity:.32;
+      transform:translate3d(0,0,2px);
+      animation:sparkleMove 8s ease-in-out infinite alternate;
+      pointer-events:none;
+    }
+    @keyframes holoSweep{
+      0%{transform:translate3d(-10%,-10%,1px) rotateZ(0)}
+      50%{transform:translate3d(10%,10%,1px) rotateZ(180deg)}
+      100%{transform:translate3d(-10%,-10%,1px) rotateZ(360deg)}
+    }
+    @keyframes sparkleMove{
+      0%{background-position:0% 0%,0% 100%;opacity:.25}
+      50%{background-position:50% 50%,50% 0%;opacity:.4}
+      100%{background-position:100% 100%,100% 50%;opacity:.3}
+    }
 
-        @keyframes bgMove {
-            0% {
-                background-position: 0% 50%
-            }
+    .controls{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      padding:12px 14px;
+      border-radius:16px;
+      background:rgba(10,15,35,.9);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      box-shadow:0 18px 40px rgba(0,0,0,.75);
+    }
+    .controls input{
+      flex:1;
+      padding:8px 10px;
+      border-radius:8px;
+      border:1px solid #262a3c;
+      background:#050813;
+      color:#fff;
+      font-size:13px;
+      outline:none;
+    }
+    .controls button{
+      padding:8px 14px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      font-size:13px;
+      font-weight:600;
+      background:linear-gradient(135deg,#0af,#9f6bff);
+      color:#fff;
+      box-shadow:0 10px 25px rgba(0,0,0,.8),0 0 16px rgba(10,175,255,.55);
+    }
+    .error-msg{font-size:11px;color:#ff6b6b;min-height:1em;}
 
-            50% {
-                background-position: 100% 50%
-            }
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index:10;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,.55);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      opacity:0;
+      transition:opacity .4s ease;
+    }
+    .modal.active{display:flex;opacity:1;}
+    .modal.closing{opacity:0;}
 
-            100% {
-                background-position: 0% 50%
-            }
-        }
+    .modal-close{
+      position:fixed;
+      bottom:40px;left:50%;
+      transform:translateX(-50%);
+      z-index:9999;
+      width:60px;height:60px;
+      border-radius:999px;
+      border:3px solid #0af;
+      background:radial-gradient(circle at 30% 20%,#fff 0,#0af 35%,#050816 70%);
+      color:#fff;font-size:34px;
+      display:none;align-items:center;justify-content:center;
+      cursor:pointer;
+      box-shadow:0 18px 30px rgba(0,0,0,.9),0 0 30px rgba(10,175,255,.7);
+    }
+    .modal-close.visible{display:flex;}
 
-        body::before {
-            content: "";
-            position: fixed;
-            inset: -50px;
-            pointer-events: none;
-            background-image:
-                linear-gradient(#0af1 1px, transparent 1px),
-                linear-gradient(90deg, #0af1 1px, transparent 1px);
-            background-size: 40px 40px;
-            opacity: .25;
-            mix-blend-mode: screen;
-            animation: gridMove 15s linear infinite;
-        }
-
-        @keyframes gridMove {
-            0% {
-                transform: translate3d(0, 0, 0)
-            }
-
-            100% {
-                transform: translate3d(-40px, -40px, 0)
-            }
-        }
-
-        /* ===== 카드 & 컨트롤 (맨 앞 레이어) ===== */
-        .card-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            position: relative;
-            z-index: 20;
-            /* 모달 블러보다 앞 */
-        }
-
-        .card-container {
-            position: relative;
-            perspective: 1100px;
-            z-index: 20;
-        }
-
-        .card-frame {
-            position: relative;
-            z-index: 20;
-            width: 280px;
-            height: 380px;
-            border-radius: 22px;
-            overflow: hidden;
-            cursor: pointer;
-            transform-style: preserve-3d;
-            transition: transform .12s ease-out, box-shadow .2s ease-out, filter .2s ease-out;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, .8), 0 0 40px rgba(0, 255, 255, .18);
-            background: #05080f;
-            border: 1px solid rgba(255, 255, 255, .12);
-            isolation: isolate;
-        }
-
-        .card-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .card-shine {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
-                    rgba(255, 255, 255, .7) 0,
-                    rgba(255, 255, 255, .3) 20%,
-                    transparent 55%);
-            pointer-events: none;
-            mix-blend-mode: screen;
-        }
-
-        /* 홀로그램 레이어 */
-        .card-frame::before {
-            content: "";
-            position: absolute;
-            inset: -40%;
-            background-image: conic-gradient(from 0deg,
-                    rgba(255, 0, 128, .2),
-                    rgba(0, 255, 255, .35),
-                    rgba(255, 255, 0, .35),
-                    rgba(0, 128, 255, .4),
-                    rgba(255, 0, 128, .5),
-                    rgba(0, 255, 255, .4),
-                    rgba(255, 255, 0, .2));
-            mix-blend-mode: color-dodge;
-            opacity: .55;
-            filter: blur(1px);
-            transform: translate3d(0, 0, 1px);
-            animation: holoSweep 10s linear infinite;
-            pointer-events: none;
-        }
-
-        .card-frame::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background-image:
-                radial-gradient(circle, rgba(255, 255, 255, .4) 0, transparent 55%),
-                repeating-linear-gradient(45deg, rgba(255, 255, 255, .22) 0 1px, transparent 1px 3px);
-            background-size: 180% 180%, 260% 260%;
-            mix-blend-mode: screen;
-            opacity: .32;
-            transform: translate3d(0, 0, 2px);
-            animation: sparkleMove 8s ease-in-out infinite alternate;
-            pointer-events: none;
-        }
-
-        @keyframes holoSweep {
-            0% {
-                transform: translate3d(-10%, -10%, 1px) rotateZ(0)
-            }
-
-            50% {
-                transform: translate3d(10%, 10%, 1px) rotateZ(180deg)
-            }
-
-            100% {
-                transform: translate3d(-10%, -10%, 1px) rotateZ(360deg)
-            }
-        }
-
-        @keyframes sparkleMove {
-            0% {
-                background-position: 0% 0%, 0% 100%;
-                opacity: .25
-            }
-
-            50% {
-                background-position: 50% 50%, 50% 0%;
-                opacity: .4
-            }
-
-            100% {
-                background-position: 100% 100%, 100% 50%;
-                opacity: .3
-            }
-        }
-
-        /* 컨트롤 박스 */
-        .controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            padding: 12px 14px;
-            border-radius: 16px;
-            background: rgba(10, 15, 35, .9);
-            border: 1px solid rgba(255, 255, 255, .12);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            box-shadow: 0 18px 40px rgba(0, 0, 0, .75);
-        }
-
-        .controls input {
-            flex: 1;
-            padding: 8px 10px;
-            border-radius: 8px;
-            border: 1px solid #262a3c;
-            background: #050813;
-            color: #fff;
-            font-size: 13px;
-            outline: none;
-        }
-
-        .controls button {
-            padding: 8px 14px;
-            border-radius: 999px;
-            border: none;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #0af, #9f6bff);
-            color: #fff;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, .8), 0 0 16px rgba(10, 175, 255, .55);
-        }
-
-        .error-msg {
-            font-size: 11px;
-            color: #ff6b6b;
-            min-height: 1em;
-        }
-
-        /* ===== 모달 (배경 블러만 담당, 카드 앞 X 뒤) ===== */
-        .modal {
-            position: fixed;
-            inset: 0;
-            z-index: 10;
-            /* 카드(20)보다 뒤 */
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, .55);
-            backdrop-filter: blur(16px);
-            /* 배경만 블러, 카드/컨트롤은 위 레이어라 선명 */
-            -webkit-backdrop-filter: blur(16px);
-            opacity: 0;
-            transition: opacity .4s ease;
-        }
-
-        .modal.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal.closing {
-            opacity: 0;
-        }
-
-        /* X 버튼 – 최상단 */
-        .modal-close {
-            position: fixed;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            width: 60px;
-            height: 60px;
-            border-radius: 999px;
-            border: 3px solid #0af;
-            background: radial-gradient(circle at 30% 20%, #fff 0, #0af 35%, #050816 70%);
-            color: #fff;
-            font-size: 34px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 18px 30px rgba(0, 0, 0, .9), 0 0 30px rgba(10, 175, 255, .7);
-        }
-
-        .modal-close.visible {
-            display: flex;
-        }
-
-        @media (max-width:480px) {
-            .card-frame {
-                width: 240px;
-                height: 330px;
-            }
-        }
-    </style>
+    @media (max-width:480px){
+      .card-frame{width:240px;height:330px;}
+    }
+  </style>
 </head>
-
 <body>
-    <div class="card-wrapper">
-        <div class="card-container" id="cardContainer">
-            <div class="card-frame" id="cardFrame">
-                <img id="cardImage" class="card-image"
-                    src="https://mblogthumb-phinf.pstatic.net/MjAyNDExMDVfMzMg/MDAxNzMwNzMzMzAzNTQ1.R4V3sdUyeI9HzBdNKNhqZQWx9nKB_t_0M2XHoeULaeEg.iq04XG2qlSvGpiJb_3LKOsW0oN9Oymqpbrtvl-KOtb8g.JPEG/2024-10-30-0aa6dbf6097f4145acd2875916a53782.jpg?type=w800">
-                <div id="cardShine" class="card-shine"></div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <input id="imageUrl" placeholder="https://.../image.jpg">
-            <button onclick="applyImage()">이미지 적용 ✨</button>
-        </div>
-        <div id="errorMsg" class="error-msg"></div>
+<div class="card-wrapper">
+  <div class="card-container" id="cardContainer">
+    <div class="card-frame" id="cardFrame">
+      <img id="cardImage" class="card-image"
+        src="https://mblogthumb-phinf.pstatic.net/MjAyNDExMDVfMzMg/MDAxNzMwNzMzMzAzNTQ1.R4V3sdUyeI9HzBdNKNhqZQWx9nKB_t_0M2XHoeULaeEg.iq04XG2qlSvGpiJb_3LKOsW0oN9Oymqpbrtvl-KOtb8g.JPEG/2024-10-30-0aa6dbf6097f4145acd2875916a53782.jpg?type=w800">
+      <div id="cardShine" class="card-shine"></div>
     </div>
+  </div>
 
-    <!-- 배경 블러만 담당 -->
-    <div id="modal" class="modal"></div>
-    <!-- 최상단 X 버튼 -->
-    <div id="modalClose" class="modal-close">×</div>
+  <div class="controls">
+    <input id="imageUrl" placeholder="https://.../image.jpg">
+    <button onclick="applyImage()">이미지 적용 ✨</button>
+  </div>
+  <div id="errorMsg" class="error-msg"></div>
+</div>
 
-    <script>
-        const cardContainer = document.getElementById('cardContainer');
-        const cardFrame = document.getElementById('cardFrame');
-        const cardImage = document.getElementById('cardImage');
-        const cardShine = document.getElementById('cardShine');
-        const modal = document.getElementById('modal');
-        const modalClose = document.getElementById('modalClose');
-        const errorMsg = document.getElementById('errorMsg');
+<div id="modal" class="modal"></div>
+<div id="modalClose" class="modal-close">×</div>
 
-        let isCenterAnimation = false;
-        let lastTiltX = 0, lastTiltY = 0;
+<script>
+const cardContainer=document.getElementById('cardContainer');
+const cardFrame=document.getElementById('cardFrame');
+const cardImage=document.getElementById('cardImage');
+const cardShine=document.getElementById('cardShine');
+const modal=document.getElementById('modal');
+const modalClose=document.getElementById('modalClose');
+const errorMsg=document.getElementById('errorMsg');
 
-        /* 마우스 3D 틸트 + 빛 */
-        cardContainer.addEventListener('mousemove', e => {
-            if (isCenterAnimation) return;
-            const rect = cardContainer.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
+let isCenterAnimation=false;
+let lastTiltX=0,lastTiltY=0;
 
-            const mx = x / rect.width * 100;
-            const my = y / rect.height * 100;
-            cardShine.style.setProperty('--mx', mx + '%');
-            cardShine.style.setProperty('--my', my + '%');
-
-            const rotateY = (x - centerX) / centerX * 18;
-            const rotateX = (centerY - y) / centerY * 18;
-            lastTiltX = rotateX; lastTiltY = rotateY;
-
-            cardFrame.style.transition = 'transform 0.06s ease-out';
-            cardFrame.style.transform =
-                `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.03)`;
-            cardFrame.style.boxShadow =
-                `0 26px 50px rgba(0,0,0,0.95),
+cardContainer.addEventListener('mousemove',e=>{
+  if(isCenterAnimation)return;
+  const rect=cardContainer.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+  const centerX=rect.width/2;
+  const centerY=rect.height/2;
+  const mx=x/rect.width*100;
+  const my=y/rect.height*100;
+  cardShine.style.setProperty('--mx',mx+'%');
+  cardShine.style.setProperty('--my',my+'%');
+  const rotateY=(x-centerX)/centerX*18;
+  const rotateX=(centerY-y)/centerY*18;
+  lastTiltX=rotateX;lastTiltY=rotateY;
+  cardFrame.style.transition='transform 0.06s ease-out';
+  cardFrame.style.transform=
+    `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.03)`;
+  cardFrame.style.boxShadow=
+    `0 26px 50px rgba(0,0,0,0.95),
      0 0 70px rgba(10,175,255,0.65)`;
-        });
-        cardContainer.addEventListener('mouseleave', () => {
-            if (isCenterAnimation) return;
-            cardShine.style.setProperty('--mx', '50%');
-            cardShine.style.setProperty('--my', '50%');
-
-            const overshootX = lastTiltX * -0.2;
-            const overshootY = lastTiltY * -0.2;
-            cardFrame.style.transition = 'transform 0.25s ease-out, box-shadow 0.25s ease-out';
-            cardFrame.style.transform =
-                `rotateX(${overshootX}deg) rotateY(${overshootY}deg) scale(1)`;
-            setTimeout(() => {
-                cardFrame.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
-                cardFrame.style.boxShadow =
-                    `0 20px 40px rgba(0,0,0,0.8),
+});
+cardContainer.addEventListener('mouseleave',()=>{
+  if(isCenterAnimation)return;
+  cardShine.style.setProperty('--mx','50%');
+  cardShine.style.setProperty('--my','50%');
+  const overshootX=lastTiltX*-0.2;
+  const overshootY=lastTiltY*-0.2;
+  cardFrame.style.transition='transform 0.25s ease-out, box-shadow 0.25s ease-out';
+  cardFrame.style.transform=
+    `rotateX(${overshootX}deg) rotateY(${overshootY}deg) scale(1)`;
+  setTimeout(()=>{
+    cardFrame.style.transform='rotateX(0deg) rotateY(0deg) scale(1)';
+    cardFrame.style.boxShadow=
+      `0 20px 40px rgba(0,0,0,0.8),
        0 0 40px rgba(0,255,255,0.18)`;
-            }, 220);
-        });
+  },220);
+});
 
-        /* 클릭 시 중앙 이동 + 2바퀴 회전 + 확대, 배경 블러 + X 표시 */
-        cardFrame.addEventListener('click', () => {
-            if (isCenterAnimation) return;
-            isCenterAnimation = true;
-
-            const rect = cardFrame.getBoundingClientRect();
-            const cardCenterX = rect.left + rect.width / 2;
-            const cardCenterY = rect.top + rect.height / 2;
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            const tx = centerX - cardCenterX;
-            const ty = centerY - cardCenterY;
-
-            modal.classList.add('active');
-            modal.classList.remove('closing');
-            modalClose.classList.add('visible');
-
-            cardFrame.style.transition =
-                'transform 0.8s cubic-bezier(0.19,1,0.22,1), box-shadow 0.6s ease';
-            cardFrame.style.transform =
-                `translate(${tx}px,${ty}px) rotateY(720deg) rotateX(-8deg) scale(1.18)`;
-            cardFrame.style.boxShadow =
-                `0 40px 80px rgba(0,0,0,0.95),
+cardFrame.addEventListener('click',()=>{
+  if(isCenterAnimation)return;
+  isCenterAnimation=true;
+  const rect=cardFrame.getBoundingClientRect();
+  const cardCenterX=rect.left+rect.width/2;
+  const cardCenterY=rect.top+rect.height/2;
+  const centerX=window.innerWidth/2;
+  const centerY=window.innerHeight/2;
+  const tx=centerX-cardCenterX;
+  const ty=centerY-cardCenterY;
+  modal.classList.add('active');
+  modal.classList.remove('closing');
+  modalClose.classList.add('visible');
+  cardFrame.style.transition=
+    'transform 0.8s cubic-bezier(0.19,1,0.22,1), box-shadow 0.6s ease';
+  cardFrame.style.transform=
+    `translate(${tx}px,${ty}px) rotateY(720deg) rotateX(-8deg) scale(1.18)`;
+  cardFrame.style.boxShadow=
+    `0 40px 80px rgba(0,0,0,0.95),
      0 0 120px rgba(10,175,255,0.9)`;
-
-            setTimeout(() => {
-                cardFrame.style.transition = 'transform 0.32s ease-out, box-shadow 0.32s ease-out';
-                cardFrame.style.transform =
-                    `translate(${tx}px,${ty}px) rotateY(0deg) rotateX(-3deg) scale(1.1)`;
-                cardFrame.style.boxShadow =
-                    `0 30px 70px rgba(0,0,0,0.95),
+  setTimeout(()=>{
+    cardFrame.style.transition='transform 0.32s ease-out, box-shadow 0.32s ease-out';
+    cardFrame.style.transform=
+      `translate(${tx}px,${ty}px) rotateY(0deg) rotateX(-3deg) scale(1.1)`;
+    cardFrame.style.boxShadow=
+      `0 30px 70px rgba(0,0,0,0.95),
        0 0 90px rgba(10,175,255,0.8)`;
-                isCenterAnimation = false;
-            }, 800);
-        });
+    isCenterAnimation=false;
+  },800);
+});
 
-        /* X / 배경 클릭 / ESC 로 원위치 */
-        function closeModal() {
-            if (!modal.classList.contains('active') || isCenterAnimation) return;
-            isCenterAnimation = true;
-            modalClose.classList.remove('visible');
-
-            cardFrame.style.transition =
-                'transform 0.55s ease-out, box-shadow 0.55s ease-out';
-            cardFrame.style.transform = 'translate(0,0) rotateX(0deg) rotateY(0deg) scale(1)';
-            cardFrame.style.boxShadow =
-                `0 20px 40px rgba(0,0,0,0.8),
+function closeModal(){
+  if(!modal.classList.contains('active')||isCenterAnimation)return;
+  isCenterAnimation=true;
+  modalClose.classList.remove('visible');
+  cardFrame.style.transition=
+    'transform 0.55s ease-out, box-shadow 0.55s ease-out';
+  cardFrame.style.transform='translate(0,0) rotateX(0deg) rotateY(0deg) scale(1)';
+  cardFrame.style.boxShadow=
+    `0 20px 40px rgba(0,0,0,0.8),
      0 0 40px rgba(0,255,255,0.18)`;
+  modal.classList.add('closing');
+  setTimeout(()=>{
+    modal.classList.remove('active','closing');
+    isCenterAnimation=false;
+  },550);
+}
+modalClose.addEventListener('click',closeModal);
+modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(); });
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeModal();
+});
 
-            modal.classList.add('closing');
-            setTimeout(() => {
-                modal.classList.remove('active', 'closing');
-                isCenterAnimation = false;
-            }, 550);
-        }
-        modalClose.addEventListener('click', closeModal);
-        modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeModal();
-        });
-
-        /* 이미지 변경 */
-        function applyImage() {
-            const url = document.getElementById('imageUrl').value.trim();
-            errorMsg.textContent = '';
-            if (!url) return;
-            const img = new Image();
-            img.onload = () => { cardImage.src = url; };
-            img.onerror = () => {
-                errorMsg.textContent = '올바른 이미지 URL이 아닙니다.';
-                setTimeout(() => errorMsg.textContent = '', 3000);
-            };
-            img.src = url;
-        }
-    </script>
+function applyImage(){
+  const url=document.getElementById('imageUrl').value.trim();
+  errorMsg.textContent='';
+  if(!url)return;
+  const img=new Image();
+  img.onload=()=>{ cardImage.src=url; };
+  img.onerror=()=>{
+    errorMsg.textContent='올바른 이미지 URL이 아닙니다.';
+    setTimeout(()=>errorMsg.textContent='',3000);
+  };
+  img.src=url;
+}
+</script>
 </body>
-
 </html>
